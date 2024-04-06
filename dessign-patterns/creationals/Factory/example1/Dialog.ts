@@ -35,6 +35,9 @@ abstract class Dialog {
 }
 
 class WebDialog extends Dialog {
+    static createButton() {
+        throw new Error("Method not implemented.");
+    }
     createButton(): IButton {
         return new HTMLButton();
     }
@@ -47,10 +50,16 @@ class WindowsDialog extends Dialog {
 }
 
 // Usando la fabrica
+let source = 'web';
 
-const webDialog = new WebDialog();
-webDialog.render();
+if (source === 'web') {
+    let dialog = new WebDialog();
+    dialog.render();
+}   else if (source === 'windows') {
+    let dialog = new WindowsDialog();
+    dialog.render();
+}
 
-const windowsDialog = new WindowsDialog();
-windowsDialog.render();
+
+
 
