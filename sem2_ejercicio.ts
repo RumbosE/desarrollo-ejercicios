@@ -4,7 +4,7 @@ class Optional<T>{
 
     constructor(value: T | undefined) {
         this.value = value;
-        if(value === undefined){
+        if(value === undefined || value === null){
             this.assigned = false;
         } else {
             this.assigned = true;
@@ -27,8 +27,8 @@ class Optional<T>{
 
 // usar Optional para el valor de un elemento
 
-let valor = [, 2, 3, 4, 5];
-let optional = new Optional<number>(valor[0]);
+let valor = [1, 2, 3, 4, ];
+let optional = new Optional<number>(valor[4]);
 try {
     console.log(optional.getValue());
 }
