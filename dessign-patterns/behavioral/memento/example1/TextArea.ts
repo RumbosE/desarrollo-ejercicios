@@ -26,6 +26,10 @@ class TextArea {
     restore(memento: Memento){
         this.text = memento.getSaveText()
     }
+
+    getText(): string{
+        return this.text;
+    }
 }
 
 class Editor {
@@ -42,11 +46,17 @@ class Editor {
         this.stateHistory.push(this.textArea.takeSnapshot());
     }
 
-    undo():string{
+    undo() {
         this.textArea.restore(this.stateHistory.pop() as Memento);
-        return this.textArea.takeSnapshot().getSaveText();
+    }
+
+    getMemento(){
+        console.log(this.stateHistory)
     }
     
+    getText() {
+        console.log(this.textArea.getText())
+    }
 }
 
 // Uso del patron memento en typeScript
@@ -58,11 +68,17 @@ editor.write("Hola mundo soy");
 editor.write("Hola mundo soy un");
 editor.write("Hola mundo soy un programador");
 
-console.log(editor.undo());
+editor.getMemento()
+
 console.log(' ');
 editor.undo();
 editor.undo();
 editor.undo();
+editor.getText()
+editor.getMemento()
 editor.write("Hola mundo soy Eduardo");
 
-console.log(editor.undo());
+
+editor.getMemento()
+
+editor.getText()
