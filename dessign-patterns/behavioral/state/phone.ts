@@ -7,6 +7,7 @@ abstract class State {
 
     abstract onhome():string;
     abstract onOffOn():string;
+    abstract lock():string;
 }
 
 class Phone {
@@ -51,6 +52,11 @@ class OffState extends State {
         this.phone.setState(new PhoneReadyState(this.phone));
         return this.phone.turnOn();
     }
+
+    lock(): string{
+        this.phone.setState(new LockedState(this.phone));
+        return this.phone.lock();
+    }
 }
 
 class PhoneReadyState extends State {
@@ -66,6 +72,11 @@ class PhoneReadyState extends State {
         this.phone.setState(new OffState(this.phone));
         return this.phone.lock();
     }
+
+    lock(): string {
+        this.phone.setState(new LockedState(this.phone));
+        return this.phone.lock();
+    }
 }
 
 class LockedState extends State {
@@ -74,11 +85,16 @@ class LockedState extends State {
     }
 
     onhome():string {
-        return this.phone.home();
+        this.phone.setState(new PhoneReadyState(this.phone));
+        return this.phone.unlock();
     }
 
     onOffOn():string {
-        this.phone.setState(new OffState(this.phone));
+        this.phone.setState(new PhoneReadyState(this.phone));
+        return this.phone.lock();
+    }
+
+    lock(): string {
         return this.phone.lock();
     }
 }
@@ -87,3 +103,4 @@ class LockedState extends State {
 const phone = new Phone();
 console.log(phone.turnOn());
 console.log(phone.lock());
+console.log(phone.unlock());
