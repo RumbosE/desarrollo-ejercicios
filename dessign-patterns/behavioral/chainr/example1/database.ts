@@ -18,13 +18,13 @@ class Database {
 
 interface IHandler {
     handle(username: string, password: string): boolean;
-    setNextHandler(next: Handler): IHandler;
+    setNextHandler(next: BaseHandler): IHandler;
 }
 
-abstract class Handler implements IHandler{
+abstract class BaseHandler implements IHandler{
     private next: IHandler;
 
-    setNextHandler(next: Handler): IHandler {
+    setNextHandler(next: BaseHandler): IHandler {
         this.next = next;
         return next;
     }
@@ -32,21 +32,23 @@ abstract class Handler implements IHandler{
     protected handleNext(username: string, password: string): boolean {
         if (this.next) {
             return this.next.handle(username, password);
-        }
+        } else {
         console.log('No more handlers');
         console.log('You have passed all the handlers');
         console.log(' ');
-
+        }
         return true;    // No more handlers
     }
 
     abstract handle(username: string, password: string): boolean;
 }
 
-class UserExistHandler extends Handler {
-    constructor(private readonly database: Database) {
+class UserExistHandler extends BaseHandler {
+    private readonly database: Database;
+
+    constructor(db: Database) {
         super();
-        this.database = database;
+        this.database = db;
     }
 
     handle(username: string, password: string): boolean {
@@ -61,21 +63,7 @@ class UserExistHandler extends Handler {
     }
 }
 
-class RoleCheckHandler extends Handler {
-
-    handle(username: string, password: string): boolean {
-        console.log(' ');
-        if (username === 'admin_username') {
-            console.log('RoleCheckHandler');
-            console.log('Showing Admin page - Admin user');
-            return true;
-        }
-        console.log('RoleCheckHandler loading default page - User');
-        return this.handleNext(username, password);
-    }
-}
-
-class ValidPasswordHandler extends Handler {
+class ValidPasswordHandler extends BaseHandler {
     constructor(private readonly database: Database) {
         super();
         this.database = database;
@@ -93,8 +81,22 @@ class ValidPasswordHandler extends Handler {
     }
 }
 
+class RoleCheckHandler extends BaseHandler {
+
+    handle(username: string, password: string): boolean {
+        console.log(' ');
+        if (username === 'admin_username') {
+            console.log('RoleCheckHandler');
+            console.log('Showing Admin page - Admin user');
+            return true;
+        }
+        console.log('RoleCheckHandler loading default page - User');
+        return this.handleNext(username, password);
+    }
+}
+
 class AuthService{
-    private handler: Handler;
+    private handler: BaseHandler;
 
     constructor() {
         this.handler = new UserExistHandler(new Database());
