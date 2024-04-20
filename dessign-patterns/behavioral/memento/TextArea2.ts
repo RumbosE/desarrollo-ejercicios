@@ -5,8 +5,9 @@ interface IMemento2 {
 class OriginatorText {
     private text: string;
 
-    set(text: string) {
+    set(text: string): OriginatorText {
         this.text = text;
+        return this;
     }
 
     get(): string {
@@ -35,7 +36,7 @@ class MementoText implements IMemento2 {
 }
 
 class EditorCaretaker {
-    originator: OriginatorText;
+    private originator: OriginatorText;
     stateHistory: IMemento2[];
 
     constructor() {
@@ -43,17 +44,18 @@ class EditorCaretaker {
         this.stateHistory = new Array<IMemento2>();
     }
 
-    write(text: string) {
-        this.originator.set(text);
-        this.stateHistory.push(this.originator.save());
+    write(text: string): void {
+        let o = this.originator.set(text);
+        this.stateHistory.push(o.save());
     }
 
     undo() {
         this.stateHistory.pop();
-        this.originator.restore(this.stateHistory[this.stateHistory.length - 1]);
+        let lastState = this.stateHistory[this.stateHistory.length - 1];
+        this.originator.restore(lastState);
     }
 
-    getLastText() {
+    getText() {
         return this.originator.get();
     }
 
@@ -68,4 +70,4 @@ console.log(editorCaretaker.stateHistory);
 
 editorCaretaker.undo();
 console.log(editorCaretaker.stateHistory);
-console.log(editorCaretaker.originator.get());
+console.log(editorCaretaker.getText());
