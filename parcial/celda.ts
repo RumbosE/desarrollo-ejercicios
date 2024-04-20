@@ -31,68 +31,61 @@ class Celda<T> {
         this.valor = v;
     }
 
-    reducire(f: (_x: T, _y: T) => T, p: (e:T) =>boolean): Optionale<T> {
-        let valor = this.valor;
-        if (p(valor)) {
-            return new Optionale<T>(f(valor, valor));
-        }
-        else {
+    reducir(f: (_x: T, _y: T) => T, p: (e: T) => boolean): Optionale<T> {
+        if (p(this.valor)) {
+            return new Optionale<T>(this.valor);
+        } else {
             return new Optionale<T>(undefined);
         }
     }
 }
 
-class Caja<T> extends Celda<T>{
+class Caja<T> extends Celda<T> {
+    elementos: Celda<T>[];
 
-    elementos: Celda<T>[]
-
-    constructor(v:T, e:Celda<T>[]){
-        super(v)
+    constructor(v: T, e: Celda<T>[]) {
+        super(v);
         if (e.length < 2) {
             throw new Error("Caja debe tener al menos dos elementos de tipo Celda");
         }
-        this.elementos= e;
+        this.elementos = e;
     }
 
+    reducir(f: (_x: T, _y: T) => T, p: (e: T) => boolean): Optionale<T> {
+        let total: T | undefined ;
 
-    reducir(f: (_x: T, _y: T) => T, p: (e:T) =>boolean ): Optionale<T> {
-        let total: T | undefined;
-
-        if (p(this.valor)){
+        if (p(this.valor)) {
             total = this.valor;
         }
-
-        if (this.elementos.length > 0){
-            for(let i = 0; i < this.elementos.length; i++){
-                if(p(this.elementos[i].valor)){
-                    total = f(total as T, this.elementos[i].reducire(f, p).getValue());
+        if (this.elementos) {
+            this.elementos.forEach((e) => {
+                let c = e.reducir(f, p);
+                if (c.hasValue()) {
+                    total !==undefined? total = f(total,c.getValue()) : total= c.getValue()
                 }
-            }
+            });
         }
-        return new Optionale<T>(total as T);
+        return new Optionale<T>(total);
     }
 }
 
-
-let celda = new Celda<string>("h");
+let celda = new Celda<string>("hola2");
 let celda2 = new Celda<string>("hola3");
 let celda3 = new Celda<string>("hola4");
 
-let caja = new Caja<string>('hola1', [celda, celda2, celda3]);
+let caja = new Caja<string>("h", [celda, celda2, celda3]);
 
-function textLongitud(x:string): boolean {
+function textLongitud(x: string): boolean {
     return x.length > 2;
 }
 
-function concat(x:string, y:string): string {
-    return x +' ' + y;
+function concat(x: string, y: string): string {
+    return x + " " + y;
 }
 
 let resultado = caja.reducir(concat, textLongitud);
 if (resultado.hasValue()) {
     console.log(resultado.getValue());
-}
-else {
+} else {
     console.log("No se cumple la condición");
 }
-
