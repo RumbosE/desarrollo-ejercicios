@@ -41,7 +41,7 @@ console.log(r.getValue());
 //Ejemplos
 //Estudiantes los deben hacer !!
 
-class Either<TLeft, TRight> {
+class Eitherr<TLeft, TRight> {
   private readonly value: TLeft | TRight;
   private readonly left: boolean;
 
@@ -69,10 +69,10 @@ class Either<TLeft, TRight> {
   }
 
   static makeLeft<TLeft, TRight>(value: TLeft) {
-    return new Either<TLeft, TRight>(value, true);
+    return new Eitherr<TLeft, TRight>(value, true);
   }
 
   static makeRight<TLeft, TRight>(value: TRight) {
-    return new Either<TLeft, TRight>(value, false);
+    return new Eitherr<TLeft, TRight>(value, false);
   }
 }
