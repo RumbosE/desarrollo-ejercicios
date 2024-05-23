@@ -25,17 +25,17 @@ class Result<T> {
   }
   
   static makeResult<T>(value: T) {
-    return new Result<T>(false, value);
+    return new Resulte<T>(false, value);
   }
 
   static makeError<T>(error: Error) {
-    return new Result<T>(true, undefined, error);
+    return new Resulte<T>(true, undefined, error);
   }
 }
 
 
 
-let r : Result<number> = Result.makeResult(10);
+let r : Resulte<number> = Resulte.makeResult(10);
 console.log(r.getValue());
 
 //Ejemplos

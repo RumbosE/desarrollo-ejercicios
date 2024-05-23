@@ -1,6 +1,6 @@
 interface IActionService<T> {
 
-    validate(data: T): Resulte<T>;
+    execute(data: T): Result<T>;
 }
 
 class BuyGiftDto {
@@ -10,7 +10,7 @@ class BuyGiftDto {
     beneficedId?: string;
 }
 
-class Resulte<T> {
+class Result<T> {
     private value: T;
     private _error: Error;
     private _isError: boolean;
@@ -37,33 +37,32 @@ class Resulte<T> {
     }
 
     static makeResult<T>(value: T) {
-        return new Resulte<T>(false, value);
+        return new Result<T>(false, value);
     }
 
     static makeError<T>(error: Error) {
-        return new Resulte<T>(true, undefined, error);
+        return new Result<T>(true, undefined, error);
     }
 }
 
 abstract class BaseHandler<T> implements IActionService<T> {
-
     private next: IActionService<T>;
 
-    constructor( ){}
+    constructor(){}
 
     public setNextHandler(next: IActionService<T>): IActionService<T> {
         this.next = next;
         return this;
     }
 
-    protected handleNext(data: T): Resulte<T> {
-        if (this.next) {
-            return this.next.validate(data);
+    protected handleNext(data: T): Result<T> {
+        if (this.next){
+            return this.next.execute(data);
         }
-        return Resulte.makeResult(data);    // No more handlers
+        return Result.makeResult(data);    // No more handlers
     }
 
-    abstract validate(data: T): Resulte<T>;
+    abstract execute(data: T): Result<T>;
 }
 
 class ValidateUserService extends BaseHandler<BuyGiftDto>{
@@ -72,11 +71,11 @@ class ValidateUserService extends BaseHandler<BuyGiftDto>{
         super();
     }
 
-    validate(data: BuyGiftDto): Resulte<BuyGiftDto> { 
+    execute(data: BuyGiftDto): Result<BuyGiftDto> { 
         console.log('Validate UserService');
         
         if(!this.repository.findUserById(data.personId)){
-            return Resulte.makeError(new Error(data.personId + ' no se encuentra registrado'));
+            return Result.makeError(new Error(data.personId + ` no se encuentra registrado in ${this.constructor.name}`));
         } else {
             console.log('The user exist in our db');
             console.log(' ');
@@ -103,17 +102,18 @@ interface IProductRepository{
     getPrice(id:string):number
 }
 
-class ValidateProductService extends BaseHandler<BuyGiftDto>{
+class ValidateProductService extends BaseHandler<BuyGiftDto>
+{
 
     constructor(private repository: IProductRepository){
         super();
     }
 
-    validate(data: BuyGiftDto): Resulte<BuyGiftDto> { 
+    execute(data: BuyGiftDto): Result<BuyGiftDto> { 
         console.log('Ejecutando ValidateProductService');
         
         if(!this.repository.findProductById(data.productId)){
-            return Resulte.makeError(new Error(data.productId + ' no se encuentra registrado'));
+            return Result.makeError(new Error(data.productId + ` no se encuentra registrado in ${this.constructor.name}`));
         }
         console.log('The Product exist in our db');
         console.log(' ');
@@ -121,17 +121,18 @@ class ValidateProductService extends BaseHandler<BuyGiftDto>{
     }
 }
 
-class ValidateBeneficedService extends BaseHandler<BuyGiftDto>{
+class ValidateBeneficedService extends BaseHandler<BuyGiftDto>
+{
 
     constructor(private repository: IUserRepository){
         super();
     }
 
-    validate(data: BuyGiftDto): Resulte<BuyGiftDto> { 
+    execute(data: BuyGiftDto): Result<BuyGiftDto> { 
         console.log('Ejecutando BeneficedService');
         
         if(!this.repository.findUserById(data.beneficedId!)){
-            return Resulte.makeError(new Error(data.beneficedId + ' no se encuentra registrado'));
+            return Result.makeError(new Error(data.beneficedId + ` no se encuentra registrado in ${this.constructor.name}`));
         }
         console.log('The lucky person exist in our db');
         console.log(' ');
@@ -139,19 +140,20 @@ class ValidateBeneficedService extends BaseHandler<BuyGiftDto>{
     }
 }
 
-class ValidateWalletService extends BaseHandler<BuyGiftDto>{
+class ValidateWalletService extends BaseHandler<BuyGiftDto>
+{
 
     constructor(private ProductRepository: IProductRepository, private UserRepository: IUserRepository){
         super();
     }
 
-    validate(data: BuyGiftDto): Resulte<BuyGiftDto> { 
+    execute(data: BuyGiftDto): Result<BuyGiftDto> { 
         console.log('Ejecutando ValidateWalletService');
         
         let price= this.ProductRepository.getPrice(data.productId)
         let walletAmount= this.UserRepository.getWalletTotal(data.personId)
         if(walletAmount<price*data.quantity){
-            return Resulte.makeError(new Error(data.personId + ' no tiene suficiente saldo'));
+            return Result.makeError(new Error(data.personId + ` no tiene suficiente saldo in ${this.constructor.name}`));
         }
 
         console.log('All is ready for your purchase');
@@ -160,23 +162,32 @@ class ValidateWalletService extends BaseHandler<BuyGiftDto>{
     }
 }
 
-interface ILogger{
-
+interface ILogger
+{
 }
 
-abstract class BaseLogger<T> implements IActionService<T>{
+class ConsoleLogger implements ILogger
+{
+
+}
+abstract class BaseLogger<T> implements IActionService<T>
+{
     constructor(private logger: ILogger, public wrappee: IActionService<T> ){};
     
-    validate(data: T): Resulte<T> { 
-        return this.wrappee.validate(data);
+    execute(data: T): Result<T> { 
+        return this.wrappee.execute(data);
     }
 }
 
-class LoggerService extends BaseLogger<BuyGiftDto>{
-    validate(data: BuyGiftDto): Resulte<BuyGiftDto> {
-        let response = this.wrappee.validate(data);
+class LoggerService extends BaseLogger<BuyGiftDto>
+{
+    execute(data: BuyGiftDto): Result<BuyGiftDto> {
+        let response = this.wrappee.execute(data);
         if(response.isError()){
-            console.log(`Log: ${response.getError().message}`);
+            console.log(`Log: ${response.getError().message} `);
+        }
+        else{
+            console.log(`Log: The purchase has been complete to ${data.personId}`, JSON.stringify(response.getValue()));
         }
         return response;
         
@@ -184,9 +195,10 @@ class LoggerService extends BaseLogger<BuyGiftDto>{
 
 }
 
-class UserRepository implements IUserRepository{
+class UserRepository implements IUserRepository
+{
     findUserById(id: string): boolean {
-        return false;
+        return true;
     }
 
     getWalletTotal(id: string): number {
@@ -204,22 +216,32 @@ class ProductRepository implements IProductRepository{
     }
 }
 
-class BuyProductService {
-    static fabricPurchase(data: BuyGiftDto){
+
+class BuyProductService implements IActionService<BuyGiftDto>
+{
+    execute(data: BuyGiftDto): Result<BuyGiftDto>{
         let service = new ValidateUserService(new UserRepository()).setNextHandler(
-            new ValidateProductService(new ProductRepository()).setNextHandler(
-                new ValidateProductService(new ProductRepository()).setNextHandler(
-                    new ValidateWalletService(new ProductRepository(), new UserRepository())
-                )
-            )
-        )
-                            
-        service.validate(data);
+                        new ValidateProductService(new ProductRepository()).setNextHandler(
+                            new ValidateWalletService(new ProductRepository(), new UserRepository())
+                        )
+                    )
+
+        let response= service.execute(data)
+        if(!response.isError()){
+            console.log('The purchase has been complete', JSON.stringify(response.getValue()));
+        }
+        else{
+            console.log('The purchase has been rejected ', response.getError().message);
+        }
+        return response;
     }
 }
 
-class RegaloProductService{
-    static fabricRegalo(data: BuyGiftDto){
+
+class RegaloProductService implements IActionService<BuyGiftDto>
+{
+
+    execute(data: BuyGiftDto){
         let service = new ValidateUserService(new UserRepository()).setNextHandler(
                             new ValidateProductService(new ProductRepository()).setNextHandler(
                                 new ValidateWalletService(new ProductRepository(), new UserRepository()).setNextHandler(
@@ -228,17 +250,19 @@ class RegaloProductService{
                             )
                         )
         
-        let response= service.validate(data)
+        let response= service.execute(data)
         if(!response.isError()){
-            console.log('The gift was sent ', JSON.stringify(response.getValue()));
+            console.log('The gift was sent', JSON.stringify(response.getValue()));
         }
         else{
             console.log('The gift was not sent ', response.getError().message);
         }
+        return response;
     }
 }
 
 
-// let purchase= BuyProductService.fabricPurchase({personId:'212',productId:'2122', quantity:4})
+let regalo= new LoggerService(new ConsoleLogger(),new RegaloProductService()).execute({personId:'212',productId:'2122', quantity:1, beneficedId:'212'})
 
-let regalo= RegaloProductService.fabricRegalo({personId:'212',productId:'2122', quantity:4, beneficedId:'312'})
+// let purchase= new LoggerService(new ConsoleLogger(),new BuyProductService())
+// purchase.validate({personId:'212',productId:'2122', quantity:6})
